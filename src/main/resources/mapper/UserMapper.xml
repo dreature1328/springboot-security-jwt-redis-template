@@ -1,0 +1,294 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="xyz.dreature.ssjrt.mapper.UserMapper">
+    <!-- ===== 结果映射配置 ===== -->
+    <!-- 表和类映射关系 -->
+    <resultMap id="userMap" type="user">
+        <id property="id" column="id" />
+        <result property="uuid" column="uuid" />
+        <result property="username" column="username" />
+        <result property="passwordHash" column="password_hash" />
+        <result property="email" column="email" />
+        <result property="phone" column="phone" />
+        <result property="nickname" column="nickname" />
+        <result property="avatarUrl" column="avatar_url" />
+        <result property="gender" column="gender" />
+        <result property="birthDate" column="birth_date" />
+        <result property="status" column="status" />
+        <result property="lastLoginAt" column="last_login_at" />
+        <result property="createdAt" column="created_at" />
+        <result property="updatedAt" column="updated_at" />
+    </resultMap>
+
+    <!-- ===== 复用 SQL 片段 ===== -->
+    <!-- 表结构 -->
+    <sql id="table">`user`</sql>
+    <sql id="columns">`id`, `uuid`, `username`, `password_hash`, `email`, `phone`, `nickname`, `avatar_url`, `gender`, `birth_date`, `status`, `last_login_at`, `created_at`, `updated_at`</sql>
+
+    <!-- 值映射 -->
+    <sql id="values">#{id}, #{uuid}, #{username}, #{passwordHash}, #{email}, #{phone}, #{nickname}, #{avatarUrl}, #{gender}, #{birthDate}, #{status}, #{lastLoginAt}, #{createdAt}, #{updatedAt}</sql>
+    <sql id="itemValues">#{item.id}, #{item.uuid}, #{item.username}, #{item.passwordHash}, #{item.email}, #{item.phone}, #{item.nickname}, #{item.avatarUrl}, #{item.gender}, #{item.birthDate}, #{item.status}, #{item.lastLoginAt}, #{item.createdAt}, #{item.updatedAt}</sql>
+
+    <!-- 更新设置 -->
+    <sql id="set">
+        `username` = #{username},
+        `password_hash` = #{passwordHash},
+        `email` = #{email},
+        `phone` = #{phone},
+        `nickname`nickname` = #{nickname},
+        `avatar_url` = #{avatarUrl},
+        `gender` = #{gender},
+        `birth_date` = #{birthDate},
+        `status` = #{status},
+        `last_login_at` = #{lastLoginAt},
+        `updated_at` = #{updatedAt}
+    </sql>
+
+    <!-- 更新设置 -->
+    <sql id="conflictSet">
+        `username` = VALUES(`username`),
+        `password_hash` = VALUES(`password_hash`),
+        `email` = VALUES(`email`),
+        `phone` = VALUES(`phone`),
+        `nickname` = VALUES(`nickname`),
+        `avatar_url` = VALUES(`avatar_url`),
+        `gender` = VALUES(`gender`),
+        `birth_date` = VALUES(`birth_date`),
+        `status` = VALUES(`status`),
+        `last_login_at` = VALUES(`last_login_at`),
+        `updated_at` = VALUES(`updated_at`)
+    </sql>
+
+    <!-- ===== 通用基础操作 ===== -->
+    <!-- 查询总数 -->
+    <select id="countAll" resultType="int">
+        SELECT COUNT(*)
+        FROM <include refid="table"/>
+    </select>
+
+    <!-- 查询全表 -->
+    <select id="selectAll" resultMap="userMap">
+        SELECT <include refid="columns"/>
+        FROM <include refid="table"/>
+    </select>
+
+    <!-- 查询随机 -->
+    <select id="selectRandom" parameterType="int" resultMap="userMap">
+        SELECT <include refid="columns"/>
+        FROM <include refid="table"/>
+        ORDER BY RAND()
+        LIMIT #{count}
+    </select>
+
+    <!-- 页面查询 -->
+    <select id="selectByPage" parameterType="int" resultMap="userMap">
+        SELECT <include refid="columns"/>
+        FROM <include refid="table"/>
+        ORDER BY `id`
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <!-- 单项查询 -->
+    <select id="selectById" parameterType="long" resultMap="userMap">
+        SELECT <include refid="columns"/>
+        FROM <include refid="table"/>
+        WHERE `id` = #{id}
+    </select>
+
+    <!-- 单批查询 -->
+    <select id="selectBatchByIds" resultMap="userMap">
+        SELECT <include refid="columns"/>
+        FROM <include refid="table"/>
+        WHERE `id` IN
+        <foreach collection="list" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+
+    <!-- 单项插入 -->
+    <insert id="insert" parameterType="user">
+        INSERT INTO <include refid="table"/>
+        (<include refid="columns"/>)
+        VALUES (<include refid="values"/>)
+    </insert>
+
+    <!-- 单批插入 -->
+    <insert id="insertBatch" parameterType="list">
+        INSERT INTO <include refid="table"/>
+        (<include refid="columns"/>)
+        VALUES
+        <foreach collection="list" item="item" index="index" separator=",">
+            (<include refid="itemValues"/>)
+        </foreach>
+    </insert>
+
+    <!-- 单项更新 -->
+    <update id="update" parameterType="user">
+        UPDATE <include refid="table"/>
+        SET <include refid="set"/>
+        WHERE `id` = #{id}
+    </update>
+
+    <!-- 单批更新 -->
+    <update id="updateBatch" parameterType="list">
+        UPDATE <include refid="table"/>
+        <trim prefix="SET" suffixOverrides=",">
+            <!-- WHEN ... THEN ... 语句相当于编程语言中的 switch 语句 -->
+            <trim prefix=" `numeric_value` = CASE " suffix=" END, ">
+                <foreach collection="list" item="item">
+                    WHEN `id` = #{item.id} THEN #{item.numericValue}
+                </foreach>
+            </trim>
+            <trim prefix=" `decimal_value` = CASE " suffix=" END, ">
+                <foreach collection="list" item="item">
+                    WHEN `id` = #{item.id} THEN #{item.decimalValue}
+                </foreach>
+            </trim>
+            <trim prefix=" `text_content` = CASE " suffix=" END, ">
+                <foreach collection="list" item="item">
+                    WHEN `id` = #{item.id} THEN #{item.textContent}
+                </foreach>
+            </trim>
+            <trim prefix=" `active_flag` = CASE " suffix=" END, ">
+                <foreach collection="list" item="item">
+                    WHEN `id` = #{item.id} THEN #{item.activeFlag}
+                </foreach>
+            </trim>
+        </trim>
+        WHERE `id` IN
+        <foreach collection="list" item="item" open="(" close=")" separator=",">
+            #{item.id}
+        </foreach>
+    </update>
+
+    <!-- 单项插入或更新 -->
+    <insert id="upsert" parameterType="user">
+        INSERT INTO <include refid="table"/>
+        (<include refid="columns"/>)
+        VALUES (<include refid="values"/>)
+        ON DUPLICATE KEY UPDATE
+        <include refid="conflictSet"/>
+    </insert>
+
+    <!-- 单批插入或更新 -->
+    <insert id="upsertBatch" parameterType="list">
+        INSERT INTO <include refid="table"/>
+        (<include refid="columns"/>)
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (<include refid="itemValues"/>)
+        </foreach>
+        ON DUPLICATE KEY UPDATE
+        <include refid="conflictSet"/>
+    </insert>
+
+    <!-- 单项删除 -->
+    <delete id="deleteById" parameterType="long">
+        DELETE FROM <include refid="table"/>
+        WHERE `id` = #{id}
+    </delete>
+
+    <!-- 单批删除 -->
+    <delete id="deleteBatchByIds" parameterType="list">
+        DELETE FROM <include refid="table"/>
+        WHERE `id` IN
+        <foreach collection="list" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </delete>
+
+    <!-- 清空 -->
+    <update id="truncate">
+        TRUNCATE TABLE <include refid="table"/>
+    </update>
+
+    <!-- ===== 检查扩展操作 ===== -->
+    <!-- 按 UUID 检查 -->
+    <select id="existsByUuid" resultType="boolean">
+        SELECT COUNT(*) > 0
+        FROM <include refid="table"/>
+        WHERE uuid = #{uuid}
+    </select>
+
+    <!-- 按用户名检查 -->
+    <select id="existsByUsername" resultType="boolean">
+        SELECT COUNT(*) > 0
+        FROM <include refid="table"/>
+        WHERE username = #{username}
+    </select>
+
+    <!-- 按电子邮箱检查 -->
+    <select id="existsByEmail" resultType="boolean">
+        SELECT COUNT(*) > 0
+        FROM <include refid="table"/>
+        WHERE email = #{email}
+    </select>
+
+    <!-- 按电话号码检查 -->
+    <select id="existsByPhone" resultType="boolean">
+        SELECT COUNT(*) > 0
+        FROM <include refid="table"/>
+        WHERE phone = #{phone}
+    </select>
+
+    <!-- ===== 查询扩展操作 ===== -->
+    <select id="selectByUuid" resultMap="userMap">
+        SELECT <include refid="columns"/>
+        FROM <include refid="table"/>
+        WHERE uuid = #{uuid}
+    </select>
+
+    <select id="selectByUsername" resultMap="userMap">
+        SELECT <include refid="columns"/>
+        FROM <include refid="table"/>
+        WHERE username = #{username}
+    </select>
+
+    <select id="selectByEmail" resultMap="userMap">
+        SELECT <include refid="columns"/>
+        FROM <include refid="table"/>
+        WHERE email = #{email}
+    </select>
+
+    <select id="selectByPhone" resultMap="userMap">
+        SELECT <include refid="columns"/>
+        FROM <include refid="table"/>
+        WHERE phone = #{phone}
+    </select>
+
+    <!-- ===== 更新扩展操作 ===== -->
+    <!-- 更新用户状态 -->
+    <update id="updateStatus">
+        UPDATE <include refid="table"/>
+        SET
+            status = #{status},
+            updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <!-- 更新登录时间 -->
+    <update id="updateLastLogin">
+        UPDATE <include refid="table"/>
+        SET
+            last_login_at = #{loginTime},
+            updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <!-- ===== 多表关联操作 ===== -->
+    <select id="selectByRoleId" parameterType="short" resultMap="userMap">
+        SELECT u.id, u.username, u.email
+        FROM user u
+            INNER JOIN user_role ur ON u.id = ur.user_id
+        WHERE ur.role_id = #{roleId}
+    </select>
+
+    <select id="selectByPermissionId" parameterType="long" resultMap="userMap">
+        SELECT DISTINCT u.id, u.username, u.email
+        FROM user u
+            INNER JOIN user_role ur ON u.id = ur.user_id
+            INNER JOIN role_permission rp ON ur.role_id = rp.role_id
+        WHERE rp.permission_id = #{permissionId}
+    </select>
+</mapper>

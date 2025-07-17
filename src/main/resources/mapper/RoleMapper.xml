@@ -1,0 +1,210 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="xyz.dreature.ssjrt.mapper.RoleMapper">
+    <!-- ===== 结果映射配置 ===== -->
+    <!-- 表和类映射关系 -->
+    <resultMap id="roleMap" type="role">
+        <id property="id" column="id"/>
+        <result property="code" column="code"/>
+        <result property="name" column="name"/>
+        <result property="system" column="system"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
+    <!-- ===== 复用 SQL 片段 ===== -->
+    <!-- 表结构 -->
+    <sql id="table">`role`</sql>
+    <sql id="columns">`id`, `code`, `name`, `is_system`, `created_at`</sql>
+
+    <!-- 值映射 -->
+    <sql id="values">#{id}, #{code}, #{name}, #{system}, #{createdAt}</sql>
+    <sql id="itemValues">#{item.id}, #{item.code}, #{item.name}, #{item.system}, #{item.createdAt}</sql>
+
+    <!-- 更新设置 -->
+    <sql id="set">`code` = #{code}, `name` = #{name}, `is_system` = #{system}</sql>
+    <sql id="conflictSet">`code` = VALUES(`code`), `name` = VALUES(`name`), `is_system` = VALUES(`is_system`)</sql>
+
+    <!-- ===== 通用基础操作 ===== -->
+    <!-- 查询总数 -->
+    <select id="countAll" resultType="int">
+        SELECT COUNT(*)
+        FROM <include refid="table"/>
+    </select>
+
+    <!-- 查询全表 -->
+    <select id="selectAll" resultMap="roleMap">
+        SELECT <include refid="columns"/>
+        FROM <include refid="table"/>
+    </select>
+
+    <!-- 查询随机 -->
+    <select id="selectRandom" parameterType="short" resultMap="roleMap">
+        SELECT <include refid="columns"/>
+        FROM <include refid="table"/>
+        ORDER BY RAND()
+        LIMIT #{count}
+    </select>
+
+    <!-- 页面查询 -->
+    <select id="selectByPage" parameterType="short" resultMap="roleMap">
+        SELECT <include refid="columns"/>
+        FROM <include refid="table"/>
+        ORDER BY `id`
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <!-- 单项查询 -->
+    <select id="selectById" parameterType="short" resultMap="roleMap">
+        SELECT <include refid="columns"/>
+        FROM <include refid="table"/>
+        WHERE `id` = #{id}
+    </select>
+
+    <!-- 单批查询 -->
+    <select id="selectBatchByIds" resultMap="roleMap">
+        SELECT <include refid="columns"/>
+        FROM <include refid="table"/>
+        WHERE `id` IN
+        <foreach collection="list" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+
+    <!-- 单项插入 -->
+    <insert id="insert" parameterType="role">
+        INSERT INTO <include refid="table"/>
+        (<include refid="columns"/>)
+        VALUES (<include refid="values"/>)
+    </insert>
+
+    <!-- 单批插入 -->
+    <insert id="insertBatch" parameterType="list">
+        INSERT INTO <include refid="table"/>
+        (<include refid="columns"/>)
+        VALUES
+        <foreach collection="list" item="item" index="index" separator=",">
+            (<include refid="itemValues"/>)
+        </foreach>
+    </insert>
+
+    <!-- 单项更新 -->
+    <update id="update" parameterType="role">
+        UPDATE <include refid="table"/>
+        SET <include refid="set"/>
+        WHERE `id` = #{id}
+    </update>
+
+    <!-- 单批更新 -->
+    <update id="updateBatch" parameterType="list">
+        UPDATE <include refid="table"/>
+        <trim prefix="SET" suffixOverrides=",">
+            <!-- WHEN ... THEN ... 语句相当于编程语言中的 switch 语句 -->
+            <trim prefix=" `numeric_value` = CASE " suffix=" END, ">
+                <foreach collection="list" item="item">
+                    WHEN `id` = #{item.id} THEN #{item.numericValue}
+                </foreach>
+            </trim>
+            <trim prefix=" `decimal_value` = CASE " suffix=" END, ">
+                <foreach collection="list" item="item">
+                    WHEN `id` = #{item.id} THEN #{item.decimalValue}
+                </foreach>
+            </trim>
+            <trim prefix=" `text_content` = CASE " suffix=" END, ">
+                <foreach collection="list" item="item">
+                    WHEN `id` = #{item.id} THEN #{item.textContent}
+                </foreach>
+            </trim>
+            <trim prefix=" `active_flag` = CASE " suffix=" END, ">
+                <foreach collection="list" item="item">
+                    WHEN `id` = #{item.id} THEN #{item.activeFlag}
+                </foreach>
+            </trim>
+        </trim>
+        WHERE `id` IN
+        <foreach collection="list" item="item" open="(" close=")" separator=",">
+            #{item.id}
+        </foreach>
+    </update>
+
+    <!-- 单项插入或更新 -->
+    <insert id="upsert" parameterType="role">
+        INSERT INTO <include refid="table"/>
+        (<include refid="columns"/>)
+        VALUES (<include refid="values"/>)
+        ON DUPLICATE KEY UPDATE
+        <include refid="conflictSet"/>
+    </insert>
+
+    <!-- 单批插入或更新 -->
+    <insert id="upsertBatch" parameterType="list">
+        INSERT INTO <include refid="table"/>
+        (<include refid="columns"/>)
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (<include refid="itemValues"/>)
+        </foreach>
+        ON DUPLICATE KEY UPDATE
+        <include refid="conflictSet"/>
+    </insert>
+
+    <!-- 单项删除 -->
+    <delete id="deleteById" parameterType="short">
+        DELETE FROM <include refid="table"/>
+        WHERE `id` = #{id}
+    </delete>
+
+    <!-- 单批删除 -->
+    <delete id="deleteBatchByIds" parameterType="list">
+        DELETE FROM <include refid="table"/>
+        WHERE `id` IN
+        <foreach collection="list" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </delete>
+
+    <!-- 清空 -->
+    <update id="truncate">
+        TRUNCATE TABLE <include refid="table"/>
+    </update>
+
+    <!-- ===== 业务扩展操作 ===== -->
+    <select id="existsByCode" resultType="boolean">
+        SELECT COUNT(*) > 0
+        FROM <include refid="table"/>
+        WHERE code = #{code}
+    </select>
+
+    <select id="selectByCode" resultMap="roleMap">
+        SELECT <include refid="columns"/>
+        FROM <include refid="table"/>
+        WHERE code = #{code}
+    </select>
+
+    <select id="selectByName" resultMap="roleMap">
+        SELECT <include refid="columns"/>
+        FROM <include refid="table"/>
+        WHERE name = #{name}
+    </select>
+
+    <select id="selectBySystem" resultMap="roleMap">
+        SELECT <include refid="columns"/>
+        FROM <include refid="table"/>
+        WHERE system = #{system}
+    </select>
+
+    <!-- ===== 多表关联操作 ===== -->
+    <select id="selectByUserId" parameterType="long" resultMap="roleMap">
+        SELECT r.id, r.code, r.name
+        FROM role r
+            INNER JOIN user_role ur ON r.id = ur.role_id
+        WHERE ur.user_id = #{userId}
+    </select>
+
+    <select id="selectByPermissionId" parameterType="short" resultMap="roleMap">
+        SELECT r.id, r.name, r.description
+        FROM role r
+            INNER JOIN role_permission rp ON r.id = rp.role_id
+        WHERE rp.permission_id = #{permissionId}
+    </select>
+</mapper>

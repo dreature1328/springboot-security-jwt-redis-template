@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="xyz.dreature.ssjrt.mapper.UserRoleMapper">
+    <!-- ===== 结果映射配置 ===== -->
+    <!-- 表和类映射关系 -->
+    <resultMap id="userRoleMap" type="userRole">
+        <result property="userId" column="user_id" />
+        <result property="roleId" column="role_id" />
+        <result property="grantedAt" column="granted_at" />
+    </resultMap>
+
+    <!-- ===== 复用 SQL 片段 ===== -->
+    <!-- 表结构 -->
+    <sql id="table">`user_role`</sql>
+    <sql id="columns">`user_id`, `role_id`, `granted_at`</sql>
+
+    <!-- 值映射 -->
+    <sql id="values">#{userId}, #{roleId}, #{grantedAt}</sql>
+    <sql id="itemValues">#{item.userId}, #{item.roleId}, #{item.grantedAt}</sql>
+
+    <!-- 更新设置 -->
+    <sql id="set">`user_id` = #{userId}, `role_id` = #{roleId}, `granted_at` = #{grantedAt}</sql>
+
+    <!-- 更新设置 -->
+    <sql id="conflictSet">`user_id` = VALUES(`user_id`), `role_id` = VALUES(`role_id`), `granted_at` = VALUES(`granted_at`)</sql>
+
+    <!-- ===== 通用基础操作 ===== -->
+    <!-- 查询总数 -->
+    <select id="countAll" resultType="int">
+        SELECT COUNT(*)
+        FROM <include refid="table"/>
+    </select>
+
+    <!-- 查询全表 -->
+    <select id="selectAll" resultMap="userRoleMap">
+        SELECT <include refid="columns"/>
+        FROM <include refid="table"/>
+    </select>
+
+    <!-- 查询随机 -->
+    <select id="selectRandom" parameterType="int" resultMap="userRoleMap">
+        SELECT <include refid="columns"/>
+        FROM <include refid="table"/>
+        ORDER BY RAND()
+        LIMIT #{count}
+    </select>
+
+    <!-- 页面查询 -->
+    <select id="selectByPage" parameterType="int" resultMap="userRoleMap">
+        SELECT <include refid="columns"/>
+        FROM <include refid="table"/>
+        ORDER BY `id`
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <!-- 单项插入 -->
+    <insert id="insert" parameterType="userRole">
+        INSERT INTO <include refid="table"/>
+        (<include refid="columns"/>)
+        VALUES (<include refid="values"/>)
+    </insert>
+
+    <!-- 单批插入 -->
+    <insert id="insertBatch" parameterType="list">
+        INSERT INTO <include refid="table"/>
+        (<include refid="columns"/>)
+        VALUES
+        <foreach collection="list" item="item" index="index" separator=",">
+            (<include refid="itemValues"/>)
+        </foreach>
+    </insert>
+
+    <!-- 单项更新 -->
+    <update id="update" parameterType="userRole">
+        UPDATE <include refid="table"/>
+        SET <include refid="set"/>
+        WHERE `id` = #{id}
+    </update>
+
+    <!-- 单批更新 -->
+    <update id="updateBatch" parameterType="list">
+        UPDATE <include refid="table"/>
+        <trim prefix="SET" suffixOverrides=",">
+            <!-- WHEN ... THEN ... 语句相当于编程语言中的 switch 语句 -->
+            <trim prefix=" `numeric_value` = CASE " suffix=" END, ">
+                <foreach collection="list" item="item">
+                    WHEN `id` = #{item.id} THEN #{item.numericValue}
+                </foreach>
+            </trim>
+            <trim prefix=" `decimal_value` = CASE " suffix=" END, ">
+                <foreach collection="list" item="item">
+                    WHEN `id` = #{item.id} THEN #{item.decimalValue}
+                </foreach>
+            </trim>
+            <trim prefix=" `text_content` = CASE " suffix=" END, ">
+                <foreach collection="list" item="item">
+                    WHEN `id` = #{item.id} THEN #{item.textContent}
+                </foreach>
+            </trim>
+            <trim prefix=" `active_flag` = CASE " suffix=" END, ">
+                <foreach collection="list" item="item">
+                    WHEN `id` = #{item.id} THEN #{item.activeFlag}
+                </foreach>
+            </trim>
+        </trim>
+        WHERE `id` IN
+        <foreach collection="list" item="item" open="(" close=")" separator=",">
+            #{item.id}
+        </foreach>
+    </update>
+
+    <!-- 单项插入或更新 -->
+    <insert id="upsert" parameterType="userRole">
+        INSERT INTO <include refid="table"/>
+        (<include refid="columns"/>)
+        VALUES (<include refid="values"/>)
+        ON DUPLICATE KEY UPDATE
+        <include refid="conflictSet"/>
+    </insert>
+
+    <!-- 单批插入或更新 -->
+    <insert id="upsertBatch" parameterType="list">
+        INSERT INTO <include refid="table"/>
+        (<include refid="columns"/>)
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (<include refid="itemValues"/>)
+        </foreach>
+        ON DUPLICATE KEY UPDATE
+        <include refid="conflictSet"/>
+    </insert>
+
+    <!-- 清空 -->
+    <update id="truncate">
+        TRUNCATE TABLE <include refid="table"/>
+    </update>
+
+    <!-- ===== 业务扩展操作 ===== -->
+    <!-- 按用户 ID 查询 -->
+    <select id="selectByUserId" parameterType="long" resultMap="userRoleMap">
+        SELECT <include refid="columns"/>
+        FROM <include refid="table"/>
+        WHERE `user_id` = #{userId}
+    </select>
+
+    <!-- 按角色 ID 查询 -->
+    <select id="selectByRoleId" parameterType="short" resultMap="userRoleMap">
+        SELECT <include refid="columns"/>
+        FROM <include refid="table"/>
+        WHERE `role_id` = #{roleId}
+    </select>
+
+    <!-- 按用户 ID 和角色 ID 查询 -->
+    <select id="selectByUserIdAndRoleId" resultMap="userRoleMap">
+        SELECT <include refid="columns"/>
+        FROM <include refid="table"/>
+        WHERE `user_id` = #{userId} AND `role_id` = #{roleId}
+    </select>
+
+    <!-- 按角色 ID 查询用户 ID -->
+    <select id="selectUserIdsByRoleId" parameterType="short" resultType="long">
+        SELECT `user_id`
+        FROM <include refid="table"/>
+        WHERE `role_id` = #{roleId}
+    </select>
+
+    <!-- 按用户 ID 查询角色 ID -->
+    <select id="selectRoleIdsByUserId" parameterType="long" resultType="short">
+        SELECT `role_id`
+        FROM <include refid="table"/>
+        WHERE `user_id` = #{userId}
+    </select>
+
+    <!-- 按用户 ID 删除 -->
+    <delete id="deleteByUserId" parameterType="long">
+        DELETE FROM <include refid="table"/>
+        WHERE `user_id` = #{userId}
+    </delete>
+
+    <!-- 按角色 ID 删除 -->
+    <delete id="deleteByRoleId" parameterType="short">
+        DELETE FROM <include refid="table"/>
+        WHERE `role_id` = #{roleId}
+    </delete>
+
+    <!-- 按用户 ID 和角色 ID 删除 -->
+    <delete id="deleteByUserIdAndRoleId">
+        DELETE FROM <include refid="table"/>
+        WHERE `user_id` = #{userId} AND `role_id` = #{roleId}
+    </delete>
+</mapper>
