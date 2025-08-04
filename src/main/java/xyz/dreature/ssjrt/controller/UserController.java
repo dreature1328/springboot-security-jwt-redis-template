@@ -67,7 +67,7 @@ public class UserController extends BaseController<User, Long, UserService> {
 
     // ===== 查询扩展操作 =====
     // 逐项查询
-    @RequestMapping("/select-ids")
+    @RequestMapping("/select-by-ids")
     public ResponseEntity<Result<List<User>>> selectByIds(
             @RequestParam(name = "ids") String ids
     ) {
@@ -116,7 +116,7 @@ public class UserController extends BaseController<User, Long, UserService> {
     // ===== 更新扩展操作 =====
     // 更新状态
     @RequestMapping("/update-status")
-    public ResponseEntity<Result<Integer>> updateUserStatus(
+    public ResponseEntity<Result<Integer>> updateStatus(
             @RequestParam Long id,
             @RequestParam String status
     ) {

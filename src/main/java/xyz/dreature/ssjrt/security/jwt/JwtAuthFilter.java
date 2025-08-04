@@ -5,7 +5,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
-import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import javax.servlet.FilterChain;
@@ -14,14 +13,14 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
-public class JwtAuthenticationFilter extends OncePerRequestFilter {
+public class JwtAuthFilter extends OncePerRequestFilter {
 
-    private final JwtTokenService jwtTokenService;
+    private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
 
-    public JwtAuthenticationFilter(JwtTokenService jwtTokenService,
-                                   UserDetailsService userDetailsService) {
-        this.jwtTokenService = jwtTokenService;
+    public JwtAuthFilter(JwtService jwtService,
+                         UserDetailsService userDetailsService) {
+        this.jwtService = jwtService;
         this.userDetailsService = userDetailsService;
     }
 
@@ -32,14 +31,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
 
         try {
-            // 1. 从请求中提取JWT令牌
-            String jwt = parseJwt(request);
+            // 1. 从请求中提取 JWT 令牌
+            String jwt = jwtService.extractToken(request);
 
             if (jwt != null) {
                 // 2. 验证令牌有效性
-                if (jwtTokenService.validateToken(jwt)) {
+                if (jwtService.validateToken(jwt)) {
                     // 3. 从令牌中提取用户名
-                    String username = jwtTokenService.getUsernameFromToken(jwt);
+                    String username = jwtService.getUsername(jwt);
 
                     // 4. 检查用户名有效性
                     if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
@@ -66,19 +65,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
         } catch (Exception e) {
             // 记录错误但不中断请求
-            logger.error("Cannot set user authentication", e);
+            logger.error("无法设置认证", e);
         }
 
         // 9. 继续过滤器链
         filterChain.doFilter(request, response);
-    }
-
-    private String parseJwt(HttpServletRequest request) {
-        String headerAuth = request.getHeader("Authorization");
-
-        if (StringUtils.hasText(headerAuth) && headerAuth.startsWith("Bearer ")) {
-            return headerAuth.substring(7);
-        }
-        return null;
     }
 }

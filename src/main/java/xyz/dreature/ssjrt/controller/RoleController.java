@@ -17,7 +17,7 @@ import java.util.List;
 public class RoleController extends BaseController<Role, Short, RoleService> {
     // ===== 业务扩展操作 =====
     // 逐项查询
-    @RequestMapping("/select-ids")
+    @RequestMapping("/select-by-ids")
     public ResponseEntity<Result<List<Role>>> selectByIds(
             @RequestParam(name = "ids") String ids
     ) {

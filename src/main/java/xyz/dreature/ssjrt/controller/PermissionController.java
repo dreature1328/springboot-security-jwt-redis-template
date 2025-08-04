@@ -17,7 +17,7 @@ import java.util.List;
 public class PermissionController extends BaseController<Permission, Short, PermissionService> {
     // ===== 业务扩展操作 =====
     // 逐项查询
-    @RequestMapping("/select-ids")
+    @RequestMapping("/select-by-ids")
     public ResponseEntity<Result<List<Permission>>> selectByIds(
             @RequestParam(name = "ids") String ids
     ) {

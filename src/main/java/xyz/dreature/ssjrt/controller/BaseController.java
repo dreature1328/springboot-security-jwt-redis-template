@@ -46,7 +46,7 @@ public abstract class BaseController<T, ID extends Serializable, S extends BaseS
     }
 
     // 查询页面
-    @RequestMapping("/select-page")
+    @RequestMapping("/select-by-page")
     public ResponseEntity<Result<List<T>>> selectByPage(
             @RequestParam(name = "offset", defaultValue = "0") int offset,
             @RequestParam(name = "limit") int limit

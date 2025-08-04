@@ -8,35 +8,38 @@ import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
+import xyz.dreature.ssjrt.security.userdetails.UserPrincipal;
 
 import javax.crypto.SecretKey;
+import javax.servlet.http.HttpServletRequest;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Service
-public class JwtTokenService {
-
+public class JwtService {
     // 常量
-    private static final String TOKEN_TYPE = "Bearer";
-    private static final String TOKEN_BLACKLIST_PREFIX = "token:blacklist:";
-    private static final String TOKEN_CACHE_PREFIX = "token:cache:";
+    public static String TOKEN_TYPE = "Bearer";
+    public static String TOKEN_BLACKLIST_PREFIX = "token:blacklist:";
+    public static String TOKEN_CACHE_PREFIX = "token:cache:";
     // 令牌刷新阈值（提前刷新时间）
-    private static final long REFRESH_THRESHOLD_MS = 5 * 60 * 1000; // 5分钟
+    public static long REFRESH_THRESHOLD_MS = 5 * 60 * 1000; // 5分钟
     // JWT配置
-    private final SecretKey secretKey;
-    private final long tokenValidityMs;
+    private SecretKey secretKey;
+    private long tokenValidityMs;
     // Redis模板
-    private final RedisTemplate<String, Object> redisTemplate;
+    private RedisTemplate<String, Object> redisTemplate;
 
     @Autowired
-    public JwtTokenService(
+    public JwtService(
             @Value("${app.jwt.secret}") String secret,
             @Value("${app.jwt.expiration}") long tokenValidityMs,
             RedisTemplate<String, Object> redisTemplate) {
@@ -50,18 +53,19 @@ public class JwtTokenService {
     // 为认证用户生成 JWT 令牌
     public String generateToken(Authentication authentication) {
         // 1. 获取用户详情
-        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+        UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
 
-        // 2. 创建JWT声明
-        Claims claims = Jwts.claims().setSubject(userDetails.getUsername());
+        // 2. 创建 JWT 声明
+        Claims claims = Jwts.claims().setSubject(userPrincipal.getUsername());
 
         // 3. 添加自定义声明
-        claims.put("authorities", userDetails.getAuthorities().stream()
+        claims.put("username", userPrincipal.getUsername());
+        claims.put("authorities", userPrincipal.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.toList()));
 
         // 4. 设置用户详情缓存键
-        String userCacheKey = TOKEN_CACHE_PREFIX + userDetails.getUsername();
+        String userCacheKey = TOKEN_CACHE_PREFIX + userPrincipal.getUsername();
 
         // 5. 生成令牌
         String token = Jwts.builder()
@@ -74,7 +78,7 @@ public class JwtTokenService {
         // 6. 缓存用户详情（用于快速刷新）
         redisTemplate.opsForValue().set(
                 userCacheKey,
-                userDetails,
+                userPrincipal,
                 tokenValidityMs + REFRESH_THRESHOLD_MS, // 稍长于令牌有效期
                 TimeUnit.MILLISECONDS
         );
@@ -165,34 +169,20 @@ public class JwtTokenService {
         }
     }
 
-    // 从令牌中解析认证信息
-    public Authentication getAuthentication(String token) {
-        // 1. 解析令牌
-        Claims claims = parseToken(token);
+    // 从请求中提取令牌
+    public String extractToken(HttpServletRequest request) {
+        String header = request.getHeader(HttpHeaders.AUTHORIZATION);
 
-        // 2. 获取用户名
-        String username = claims.getSubject();
+        if (!StringUtils.hasText(header)) {
+            return null;
+        }
 
-        // 3. 尝试从缓存获取用户详情
-        String cacheKey = TOKEN_CACHE_PREFIX + username;
-        UserDetails userDetails = (UserDetails) redisTemplate.opsForValue().get(cacheKey);
+        String prefix = TOKEN_TYPE + " ";
+        if (header.startsWith(prefix)) {
+            return header.substring(prefix.length()).trim();
+        }
 
-        // 4. 创建认证对象
-        return new UsernamePasswordAuthenticationToken(
-                userDetails,
-                null,
-                userDetails.getAuthorities()
-        );
-    }
-
-    // 获取令牌类型
-    public String getTokenType() {
-        return TOKEN_TYPE;
-    }
-
-    // 获取令牌有效期（毫秒）
-    public long getTokenValidityMs() {
-        return tokenValidityMs;
+        return null;
     }
 
     // 解析令牌（带过期验证）
@@ -219,8 +209,29 @@ public class JwtTokenService {
         return redisTemplate.hasKey(key);
     }
 
-    public String getUsernameFromToken(String token) {
-        Claims claims = parseToken(token); // 这个方法会验证令牌并抛出异常（如果无效）
-        return claims.getSubject(); // 主题就是用户名
+    // 从令牌中获取用户名
+    public String getUsername(String token) {
+        Claims claims = parseToken(token); // 验证并解析令牌
+        return claims.getSubject(); // 主题就是用户 ID
+    }
+
+    // 从令牌中获取认证信息
+    public Authentication getAuthentication(String token) {
+        // 1. 解析令牌
+        Claims claims = parseToken(token);
+
+        // 2. 获取用户名
+        String username = claims.getSubject();
+
+        // 3. 尝试从缓存获取用户详情
+        String cacheKey = TOKEN_CACHE_PREFIX + username;
+        UserDetails userDetails = (UserDetails) redisTemplate.opsForValue().get(cacheKey);
+
+        // 4. 创建认证对象
+        return new UsernamePasswordAuthenticationToken(
+                userDetails,
+                null,
+                userDetails.getAuthorities()
+        );
     }
 }

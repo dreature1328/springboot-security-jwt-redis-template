@@ -12,21 +12,21 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import xyz.dreature.ssjrt.security.jwt.JwtAuthenticationFilter;
-import xyz.dreature.ssjrt.security.jwt.JwtTokenService;
+import xyz.dreature.ssjrt.security.jwt.JwtAuthFilter;
+import xyz.dreature.ssjrt.security.jwt.JwtService;
 
 // 安全配置
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
-    private final JwtTokenService jwtTokenService;
+    private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
 
     @Autowired
-    public SecurityConfig(JwtTokenService jwtTokenService,
+    public SecurityConfig(JwtService jwtService,
                           UserDetailsService userDetailsService) { // 修改
-        this.jwtTokenService = jwtTokenService;
+        this.jwtService = jwtService;
         this.userDetailsService = userDetailsService; // 新增
     }
 
@@ -43,7 +43,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .httpBasic().disable() // 禁用基本登录
                 .formLogin().disable() // 禁用表单登录
                 .addFilterBefore( // 添加一个过滤器来验证 Token
-                        new JwtAuthenticationFilter(jwtTokenService, userDetailsService),
+                        new JwtAuthFilter(jwtService, userDetailsService),
                         UsernamePasswordAuthenticationFilter.class
                 );
     }
