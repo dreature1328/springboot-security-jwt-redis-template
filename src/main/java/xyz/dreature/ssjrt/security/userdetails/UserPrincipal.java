@@ -6,13 +6,16 @@ import xyz.dreature.ssjrt.common.entity.User;
 
 import java.util.Collection;
 
-// 用户信息
+// 用户主体（认证信息）
 public class UserPrincipal implements UserDetails {
     // ===== 属性 =====
     private Long id;
     private String username;
     private String password;
-    private String status;
+    private boolean enabled;
+    private boolean accountNonLocked;
+    private boolean accountNonExpired;
+    private boolean credentialsNonExpired;
     private Collection<? extends GrantedAuthority> authorities;
 
     // ===== 构造方法 =====
@@ -25,19 +28,20 @@ public class UserPrincipal implements UserDetails {
         this.id = user.getId();
         this.username = user.getUsername();
         this.password = user.getPasswordHash();
-        this.status = user.getStatus();
         this.authorities = authorities;
+        this.enabled = "ACTIVE".equals(user.getStatus());
+        this.accountNonLocked = !"LOCKED".equals(user.getStatus());
+        this.accountNonExpired = true;
+        this.credentialsNonExpired = true;
     }
 
     // ===== Getter 与 Setter 方法 =====
-    @Override
-    public Collection<? extends GrantedAuthority> getAuthorities() {
-        return authorities;
+    public Long getId() {
+        return id;
     }
 
-    @Override
-    public String getPassword() {
-        return password;
+    public void setId(Long id) {
+        this.id = id;
     }
 
     @Override
@@ -45,39 +49,76 @@ public class UserPrincipal implements UserDetails {
         return username;
     }
 
-    @Override
-    public boolean isAccountNonExpired() {
-        return true;
+    public void setUsername(String username) {
+        this.username = username;
     }
 
     @Override
-    public boolean isAccountNonLocked() {
-        return !"LOCKED".equals(status);
+    public String getPassword() {
+        return password;
     }
 
-    @Override
-    public boolean isCredentialsNonExpired() {
-        return true;
+    public void setPassword(String password) {
+        this.password = password;
     }
 
     @Override
     public boolean isEnabled() {
-        return "ACTIVE".equals(status);
+        return enabled;
     }
 
-    public Long getId() {
-        return id;
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+        return accountNonLocked;
+    }
+
+    public void setAccountNonLocked(boolean accountNonLocked) {
+        this.accountNonLocked = accountNonLocked;
+    }
+
+    @Override
+    public boolean isAccountNonExpired() {
+        return accountNonExpired;
+    }
+
+    public void setAccountNonExpired(boolean accountNonExpired) {
+        this.accountNonExpired = accountNonExpired;
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return credentialsNonExpired;
+    }
+
+    public void setCredentialsNonExpired(boolean credentialsNonExpired) {
+        this.credentialsNonExpired = credentialsNonExpired;
+    }
+
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return authorities;
+    }
+
+    public void setAuthorities(Collection<? extends GrantedAuthority> authorities) {
+        this.authorities = authorities;
     }
 
     // ===== 其他 =====
     // 字符串表示
     @Override
     public String toString() {
-        return "SecurityUser{" +
+        return "UserPrincipal{" +
                 "id=" + id +
                 ", username='" + username + '\'' +
                 ", password='" + password + '\'' +
-                ", status='" + status + '\'' +
+                ", enabled=" + enabled +
+                ", accountNonLocked=" + accountNonLocked +
+                ", accountNonExpired=" + accountNonExpired +
+                ", credentialsNonExpired=" + credentialsNonExpired +
                 ", authorities=" + authorities +
                 '}';
     }

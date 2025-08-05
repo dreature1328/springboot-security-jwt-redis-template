@@ -45,13 +45,13 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<Result<String>> login(@RequestBody LoginRequest loginRequest) {
         try {
-            // 1. 创建 Authentication 对象
+            // 1. 创建认证令牌
             UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
-                            loginRequest.getUsername(),
-                            loginRequest.getPassword()
+                    loginRequest.getUsername(),
+                    loginRequest.getPassword()
             );
 
-            // 2. 认证
+            // 2. 认证（默认调用 UserDetailsService 接口的 loadUserByUsername 方法）
             Authentication authentication = authenticationManager.authenticate(authenticationToken);
 
             // 3. 将认证信息存入安全上下文
@@ -82,11 +82,7 @@ public class AuthController {
                 passwordEncoder.encode(registerRequest.getPassword())
         ));
 
-        // 3. 清除缓存（如果存在）
-        String cacheKey = "user:" + registerRequest.getUsername();
-        redisTemplate.delete(cacheKey);
-
-        // 4. 返回成功
+        // 3. 返回成功
         return ResponseEntity.ok(Result.success("注册成功", null));
     }
 
@@ -103,7 +99,6 @@ public class AuthController {
         // 2. 获取用户详情
         UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
 
-        // 3. 构建响应
         return ResponseEntity.ok(Result.success("获取成功", userPrincipal));
     }
 

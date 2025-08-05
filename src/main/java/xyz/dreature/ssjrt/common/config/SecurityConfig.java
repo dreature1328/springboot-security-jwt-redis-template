@@ -8,27 +8,20 @@ import org.springframework.security.config.annotation.authentication.builders.Au
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import xyz.dreature.ssjrt.security.jwt.JwtAuthFilter;
-import xyz.dreature.ssjrt.security.jwt.JwtService;
+import xyz.dreature.ssjrt.security.userdetails.UserDetailsServiceExt;
 
 // 安全配置
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
-
-    private final JwtService jwtService;
-    private final UserDetailsService userDetailsService;
-
     @Autowired
-    public SecurityConfig(JwtService jwtService,
-                          UserDetailsService userDetailsService) { // 修改
-        this.jwtService = jwtService;
-        this.userDetailsService = userDetailsService; // 新增
-    }
+    private JwtAuthFilter jwtAuthFilter;
+    @Autowired
+    private UserDetailsServiceExt userDetailsService;
 
     // 配置 URL 访问权限
     @Override
@@ -37,13 +30,14 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .csrf().disable()
                 .authorizeRequests()
                 .antMatchers("/register", "/login").permitAll() // 允许注册 / 登录 URL
-                .anyRequest().permitAll() // 允许所有 URL（测试用）
+                .anyRequest().authenticated() // 仅允许认证用户访问
+//                .anyRequest().permitAll() // 允许所有 URL（测试用）
 //                .anyRequest().authenticated() // 禁止所有 URL
                 .and()
                 .httpBasic().disable() // 禁用基本登录
                 .formLogin().disable() // 禁用表单登录
                 .addFilterBefore( // 添加一个过滤器来验证 Token
-                        new JwtAuthFilter(jwtService, userDetailsService),
+                        jwtAuthFilter,
                         UsernamePasswordAuthenticationFilter.class
                 );
     }

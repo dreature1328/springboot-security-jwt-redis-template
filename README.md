@@ -74,17 +74,18 @@ Spring Security 常见接口
 
 ## 缓存策略
 
-项目采用 **双级缓存策略**，基于 Redis 缓存
+项目采用 **三级缓存策略**，基于 Redis 缓存
 
-- 用户数据（键前缀 `user:`）对应实体类 `User`
-- 认证信息（键前缀 `token:cache:`）对应封装类 `UserPrincipal`
+- 用户 ID 映射（缓存键 `user:id:<username>`）对应属性 `id`
+- 用户业务数据（键前缀 `user:data:<id>`）对应实体类 `User`
+- 用户认证信息（键前缀 `user:auth:<id>`）对应封装类 `UserPrincipal`
 
 ## 启动流程
 
 1. **数据源配置**
    - 编辑 `application.properties` 文件，配置数据源参数
    - 执行 `rbac.sql` 脚本，初始化数据库表结构
-2. **注入配置**：按需调整 `common.config` 中涉及安全认证的配置
+2. **注入配置**：按需调整 `common.config` 中涉及认证授权的配置
 3. **项目启动**：运行 `Application.java` 主类，启动 Spring Boot 应用
 4. **接口测试**：发起请求调用控制层接口，执行增删改查操作（`<RBAC>Controller.java`）或认证操作（`AuthController.java`）
 
